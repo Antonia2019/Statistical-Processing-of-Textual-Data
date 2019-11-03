@@ -1,0 +1,82 @@
+#-------------We used emag page------------------#
+
+
+import urllib.request
+from bs4 import BeautifulSoup as soup  # HTML data structure
+from urllib.request import urlopen as uReq  # Web client
+
+# URl to web scrap from.
+# in this example we web scrap laptops from emag.ro
+emag_url = 'https://www.emag.ro/laptopuri/c'
+emag = urllib.request.urlopen(emag_url) 
+print(emag)
+
+# opens the connection and downloads html page from url
+uClient = uReq(emag_url)
+#page_html = uClient.read()
+
+# parses html into a soup data structure to traverse html
+page_soup = soup(uClient.read(), "html.parser")
+uClient.close()
+
+# finds each product from the store page
+containers = page_soup.findAll("div", {"class": "item-container"})
+
+
+# name the output file to write to local disk
+out_filename = "emag_laptop.csv"
+# header of csv file to be written
+headers = "product_name, product_price, product_review \n"
+
+# opens file, and writes headers
+f = open(out_filename, "w")
+f.write(headers)
+
+
+# loops over each product and grabs attributes about
+# each product
+for container in containers:
+    title_container = container.findAll("h1", attrs={"class":"page-title"})
+    product_name = title_container[0].text.strip()
+    
+    price_container = container.findAll("p", attrs={"class":"product-new-price"})
+    product_price = price_container[0].text.strip()
+    
+    review_container = container.findAll("small", attrs={"class":"hidden-xs"})
+    product_review = review_container[0].text.strip()
+
+print("product_name: " + product_name)
+print("product_price: " + product_price)
+print("product_review: " + product_review)
+
+# writes the dataset to file
+f.write(product_name.replace(",") + ", " + product_price + ", " + product_review + "\n")
+
+f.close()  # Close the file
+
+import pandas as pd
+emag = pd.read_csv('emag_laptop.csv',header=0,encoding = 'unicode_escape')
+print (emag)
+
+
+#Charts
+import matplotlib.pyplot as plt
+import matplotlib.pyplot as sns
+fig, axes=plt.subplots(nrows=1, ncols = 1, figsize=(8,4))
+ax1,ax2,ax3=fig.axes
+ax1.hist(emag['price'], bins =3 , range= (0,5))
+ax1.set_title ( 'Pretul produsului')
+ax2.hist(emag['reviews'], bins =3, range = (0,100))
+ax2.set_title('nr.vizionari')
+ax3.hist(emag['price'],bins =3 , range= (0,5), histtype='step' )
+ax3.hist(emag['reviews'],bins =3 , range= (0,100), histtype='step' )
+ax3.legend(loc = 'upper left')
+ax3.set_title('2 distributii normale')
+for ax in fig.axes:
+    ax.spines['top'].set_visivle(False)
+    ax.spine['right'].set_visible(False)
+plt.show()
+
+
+emag.boxplot(column = ['price'])
+reviews=sns.catplot(x="reviews", kind="count", data=emag);
