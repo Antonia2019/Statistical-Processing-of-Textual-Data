@@ -56,7 +56,7 @@ f.close()  # Close the file
 
 import pandas as pd
 emag = pd.read_csv('emag_laptop.csv',header=0,encoding = 'unicode_escape')
-print (emag)
+print(emag)
 
 
 #Charts
