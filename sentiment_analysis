@@ -1,0 +1,71 @@
+
+
+
+#-------------  Sentiment analysis for the reviews of the Twitter iOS app ----------#
+
+
+
+# itunesr an R package to access and analyse iOS App Store iTunes Reviews,and we will see how to use itunesr to analyse iTunes Reviews of any iOS App for free.
+
+##  For this project we decide to analyse the reviews of Twitter iOS App 
+
+# install itunesr directly from CRAN:
+install.packages("readr")
+install.packages("itunesr")
+library(itunesr)
+#  the development version from GitHub:
+install.packages("devtools")
+devtools::install_github("amrrs/itunesr")
+install.packages("Rcpp")
+library("Rcpp")
+
+#Now we have got the Twitter App ID ¡§C 333903271 for which we are going to access iTunes Reviews and analyse it.
+
+# We can extract iTunes Reviews of any app with `getReviews()` function which takes 3 arguments: 
+# 1. App ID, 2. Country Code, 3. Recency / Reviews Page Data. Let us extract the reviews of Twitter iOS App.
+#Latest (Page 1) Twitter Reviews for the Country: US
+twitter_reviews <- getReviews(333903271,'us',1)
+twitter_reviews2 <- getReviews(333903271,'us',2)
+twitter_reviews3 <- getReviews(333903271,'us',3)
+twitter_reviews4 <- getReviews(333903271,'us',4)
+twitter_reviews5 <- getReviews(333903271,'us',5)
+
+d1 <- as.data.frame(twitter_reviews)
+d2 <- as.data.frame(twitter_reviews2)
+d3 <- as.data.frame(twitter_reviews3)
+d4 <- as.data.frame(twitter_reviews4)
+d5 <- as.data.frame(twitter_reviews5)
+
+twitter <- rbind(d1, d2, d3, d4, d5)
+write.csv(twitter, file = "sentiment_analysis.csv")
+# As mentioned above, getReviews extracts most recent 245 reviews ~ 5 page from US App Store for Twitter App and stores the information in Twitter as a dataframe.
+# Following are the attributes of Reviews that are extracted using getReviews:
+#Displaying the column names 
+names(twitter)
+
+#Let us trend the Average Ratings for the Reviews received for each day. We will use highcharter package 
+#for an interactive plot of this Average Rating Trend.
+
+#Ratings Trend
+install.packages("tidyverse")
+install.packages("dplyr")
+install.packages("highcharter")
+library(highcharter)
+library(dplyr)
+library(lubridate)
+dt <- twitter 
+dt$Date <- as.Date(dt$Date)
+dt$Rating <- as.numeric(dt$Rating)    
+dt <- dt %>% select(Date,Rating) %>% group_by(Date) %>% summarise(Rating = round(mean(Rating),2))
+highchart() %>%   
+  hc_add_series_times_values(dt$Date,dt$Rating, name = 'Average Rating')
+
+
+#Sentiment Analysis of Reviews:
+install.packages("sentimentr")
+library(sentimentr)
+reviews_only <- as.character(twitter$Review)
+View(reviews_only)
+sentiment_scores <- reviews_only %>% sentiment_by(by=NULL)
+View(sentiment_scores)
+highchart() %>% hc_xAxis(sentiment_scores$element_id) %>% hc_add_series(sentiment_scores$ave_sentiment, name = 'Reviews Sentiment Scores')
